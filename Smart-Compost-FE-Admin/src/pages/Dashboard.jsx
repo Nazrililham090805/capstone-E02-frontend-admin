@@ -1,17 +1,35 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
+import api, { endpoints } from '../services/api';
+import { Navigate } from 'react-router-dom';
 import LatestReading from '../components/LatestReading';
 import DataCard from '../components/DataCard';
 import AnalysisHistory from '../components/AnalysisHistory';
 
 const Dashboard = () => {
-  const latestReadingData = {
-    'pH'        : '7.0',
-    'Kadar N'   : '1 %',
-    'Kadar Air' : '25 %',
-    'Kadar P'   : '1 %',
-    'Suhu'      : '28 °C',
-    'Kadar K'   : '1 %'
-  };
+  const [latestReadingData, setLatestReadingData] = useState({
+    ph: '',
+    kadar_n: '',
+    kadar_air: '',
+    kadar_p: '',
+    suhu: '',
+    kadar_k: ''
+  });
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await api.get(endpoints.compost.getLatest);
+        setLatestReadingData(response.data);
+      } catch (error) {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+        }
+        console.error('Error:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">

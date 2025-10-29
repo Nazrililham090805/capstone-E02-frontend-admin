@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import api, { endpoints } from '../services/api';
 
 const LoginPage = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = () => {
-    // Simple validation
-    if (username && password) {
-      console.log('Login attempt:', { username, password });
-      // Call onLogin to change authentication state
-      onLogin();
-    } else {
-      alert('Please fill in all fields');
-    }
-  };
+  const handleSubmit = async () => {
+  if (!username || !password) {
+    alert('Please fill in all fields');
+    return;
+  }
+  try {
+    const response = await api.post(endpoints.auth.login, {
+      username: username,
+      password: password
+    });
 
+    // Check both message and token from response
+    if (response.data.message === "Login successful" && response.data.token) {
+      // Store the JWT token
+      localStorage.setItem('token', response.data.token);
+      // Call the onLogin callback to update app state
+      onLogin();
+    }
+  } catch (err) {
+    alert(err.response?.data?.error || 'Login failed');
+  }
+};
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
       handleSubmit();
