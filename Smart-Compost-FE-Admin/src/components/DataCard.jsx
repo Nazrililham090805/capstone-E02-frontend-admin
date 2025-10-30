@@ -1,7 +1,7 @@
 import React from 'react';
 import { TrendingUp, XCircle, CheckCircle, ChartNoAxesColumnDecreasing } from 'lucide-react';
 
-const DataCard = ({ count, label, type }) => {
+const DataCard = ({ count, label, type, isLoading = false }) => {
   const getIconAndColors = () => {
     switch (type) {
       case 'total':
@@ -16,6 +16,20 @@ const DataCard = ({ count, label, type }) => {
   };
 
   const { icon: Icon, iconBg, cardBg } = getIconAndColors();
+
+  if (isLoading) {
+    return (
+      <div className={`p-5 rounded-lg shadow ${cardBg}`}>
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-full ${iconBg} animate-pulse`} />
+          <div className="flex-1">
+            <div className={`h-8 ${iconBg} rounded w-20 mb-2 animate-pulse`} />
+            <div className={`h-4 ${iconBg} rounded w-32 animate-pulse`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-4 p-5 rounded-lg shadow ${cardBg}`}>

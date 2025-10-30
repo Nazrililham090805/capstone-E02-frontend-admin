@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
-const LatestReading = ({ title, data, isStandard = false }) => {
+const LatestReading = ({ title, data, isStandard = false, isLoading = false }) => {
   const navigate = useNavigate();
   const isCompliant = data?.kualitas === "Sesuai Standar";
 
@@ -20,6 +20,38 @@ const LatestReading = ({ title, data, isStandard = false }) => {
     const date = new Date(dateString);
     return format(date, "HH:mm, d MMM yyyy");
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-6 rounded-lg shadow flex flex-col h-full">
+        {/* title skeleton */}
+        <div className="mb-4">
+          <div className="h-5 bg-gray-200 rounded w-1/3 mb-2 animate-pulse" />
+        </div>
+
+        {/* status/date skeleton */}
+        <div className="mb-6">
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-2 animate-pulse" />
+          <div className="h-3 bg-gray-200 rounded w-1/3 animate-pulse" />
+        </div>
+
+        {/* parameters skeleton */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+          {Array.from({ length: parameters.length }).map((_, i) => (
+            <div key={i} className="flex items-center">
+              <div className="w-20 h-4 bg-gray-200 rounded mr-3 animate-pulse" />
+              <div className="flex-1 h-4 bg-gray-200 rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* button skeleton */}
+        <div className="mt-8">
+          <div className="w-full h-10 bg-gray-200 rounded animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow flex flex-col h-full">
@@ -43,7 +75,7 @@ const LatestReading = ({ title, data, isStandard = false }) => {
           <div key={key} className="flex">
             <div className="w-20 text-gray-700 font-medium">{label}</div>
             <div className='flex text-gray-600'>
-              : {data?.[key] ? Number(data[key]).toFixed(2) : ' '}{data?.[key] ? unit : ''}
+              : {data?.[key] ? Number(data[key]).toFixed(2) : '-'}{data?.[key] ? unit : ''}
             </div>
           </div>
         ))}

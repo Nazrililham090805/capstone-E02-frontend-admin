@@ -30,7 +30,7 @@ export const endpoints = {
   compost: {
     base: '/compost',
     getStats: '/compost/stats',
-    getRecords: '/compost/records',
+    getRecordsPage: (page = 1, limit = 10) => `/compost/records/page/${page}/limit/${limit}`,
     getLatest: '/compost/latest',
     ById: (id) => `/compost/${id}`
   }
