@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import api, { endpoints } from '../services/api';
 import { Navigate } from 'react-router-dom';
 import LatestReading from '../components/LatestReading';
@@ -6,6 +6,8 @@ import DataCard from '../components/DataCard';
 import AnalysisHistory from '../components/AnalysisHistory';
 
 const PAGE_LIMIT = 10;
+const MAX_ATTEMPTS = 3;
+const RETRY_BASE_MS = 400;
 
 const Dashboard = () => {
   const [latestReadingData, setLatestReadingData] = useState({
@@ -34,60 +36,110 @@ const Dashboard = () => {
 
   // guard ref to avoid concurrent requests and keep fetchRecords stable
   const recordsLoadingRef = useRef(false);
+  const fetchRecordsAttempts = useRef({}); // keyed by page
+  const timersRef = useRef([]);
+  const isMountedRef = useRef(true);
+
+  // helper validator (sesuaikan shape yang diharapkan)
+  const isValidStats = (s) => s && (s.total_kompos !== undefined || s.total !== undefined);
+  const isValidLatest = (l) => l && Object.keys(l).length > 0;
+  const isValidRecordsBody = (body) => Array.isArray(body?.data) || Array.isArray(body);
 
   // changed: parse response with { data, meta } shape
-  const fetchRecords = useCallback(async (page = 1, { append = false } = {}) => {
-    if (recordsLoadingRef.current) return;
-    recordsLoadingRef.current = true;
-    setRecordsLoading(true);
+  async function fetchRecords(page = 1, { append = false, attempt = 1 } = {}) {
+     if (recordsLoadingRef.current) return;
+     recordsLoadingRef.current = true;
+     setRecordsLoading(true);
 
-    try {
-      const resp = await api.get(endpoints.compost.getRecordsPage(page, PAGE_LIMIT));
-      const body = resp?.data ?? {};
-      const pageData = body.data ?? [];
-      const meta = body.meta ?? {};
+     try {
+       const resp = await api.get(endpoints.compost.getRecordsPage(page, PAGE_LIMIT));
+       const body = resp?.data ?? {};
+       if (!isValidRecordsBody(body)) {
+         // retry with backoff
+         if (attempt < MAX_ATTEMPTS) {
+           const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+          fetchRecordsAttempts.current[page] = attempt + 1;
+          const t = setTimeout(() => {
+            if (!isMountedRef.current) return;
+            fetchRecords(page, { append, attempt: attempt + 1 });
+          }, wait);
+          timersRef.current.push(t);
+           return;
+         } else {
+           console.error('Invalid records response after retries:', body);
+           // fallback: set empty array to avoid infinite loading (optional)
+          if (isMountedRef.current) setRecords([]);
+         }
+       } else {
+         const pageData = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
+         const meta = body.meta ?? {};
 
-      // update list
-      if (append) {
-        setRecords(prev => [...prev, ...pageData]);
-      } else {
-        setRecords(pageData);
-      }
+         if (append) setRecords(prev => [...(prev || []), ...pageData]);
+         else setRecords(pageData);
 
-      // pagination from meta (fallback to previous logic)
-      const totalPages = Number(meta.totalPages ?? Math.ceil((meta.total ?? pageData.length) / PAGE_LIMIT));
-      const currentPage = Number(meta.page ?? page);
-      const hasNext = meta.hasNext ?? (currentPage < totalPages);
+         const totalPages = Number(meta.totalPages ?? Math.ceil((meta.total ?? pageData.length) / PAGE_LIMIT));
+         const currentPage = Number(meta.page ?? page);
+         const hasNext = meta.hasNext ?? (currentPage < totalPages);
 
-      setRecordsTotalPages(totalPages);
-      setRecordsPage(currentPage);
-      setRecordsHasMore(Boolean(hasNext));
-    } catch (err) {
-      console.error('Error fetching records:', err);
-    } finally {
-      recordsLoadingRef.current = false;
-      setRecordsLoading(false);
-    }
-  }, []); // stable
+         setRecordsTotalPages(totalPages);
+         setRecordsPage(currentPage);
+         setRecordsHasMore(Boolean(hasNext));
+       }
+     } catch (err) {
+       console.error('Error fetching records:', err);
+       if (attempt < MAX_ATTEMPTS) {
+         const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+         const t = setTimeout(() => {
+         if (!isMountedRef.current) return;
+          fetchRecords(page, { append, attempt: attempt + 1 });
+        }, wait);
+        timersRef.current.push(t);
+         return;
+        }
+     } finally {
+       recordsLoadingRef.current = false;
+       setRecordsLoading(false);
+     }
+  } // stable
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (attempt = 1) => {
       try {
         const [latestResp, statsResp] = await Promise.all([
           api.get(endpoints.compost.getLatest),
           api.get(endpoints.compost.getStats)
         ]);
 
-        setLatestReadingData(latestResp?.data ?? {});
-        const s = statsResp?.data ?? {};
+        const latest = latestResp?.data ?? null;
+        const s = statsResp?.data ?? null;
+
+        if (!isValidLatest(latest) || !isValidStats(s)) {
+          if (attempt < MAX_ATTEMPTS) {
+            const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+            setTimeout(() => fetchData(attempt + 1), wait);
+            return;
+          } else {
+            console.error('Invalid stats/latest response after retries', { latest, s });
+            // stop loading to avoid infinite spinner OR keep isLoading true if you want permanent spinner
+            setIsLoading(false);
+            return;
+          }
+        }
+
+        setLatestReadingData(latest);
         setStats({
           total: Number(s.total_kompos ?? s.total ?? 0),
           sesuai: Number(s.sesuai_standar ?? s.compliant ?? 0),
           tidakSesuai: Number(s.tidak_sesuai_standar ?? s.notCompliant ?? 0)
         });
       } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        if (attempt < MAX_ATTEMPTS) {
+          const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
+          setTimeout(() => fetchData(attempt + 1), wait);
+          return;
+        }
         if (error.response?.status === 401) localStorage.removeItem('token');
-        console.error('Error:', error);
       } finally {
         setIsLoading(false);
       }
@@ -96,9 +148,13 @@ const Dashboard = () => {
     fetchData();
     // initial load: replace records (not append)
     fetchRecords(1, { append: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      isMountedRef.current = false;
+      timersRef.current.forEach(t => clearTimeout(t));
+      timersRef.current = [];
+    };
   }, []);
-
+  
   // load more should append
   const handleLoadMoreRecords = () => {
     if (recordsLoading || !recordsHasMore) return;
