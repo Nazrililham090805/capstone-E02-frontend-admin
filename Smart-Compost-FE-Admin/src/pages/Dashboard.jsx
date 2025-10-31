@@ -103,6 +103,8 @@ const Dashboard = () => {
   } // stable
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     const fetchData = async (attempt = 1) => {
       try {
         const [latestResp, statsResp] = await Promise.all([
@@ -110,49 +112,60 @@ const Dashboard = () => {
           api.get(endpoints.compost.getStats)
         ]);
 
-        const latest = latestResp?.data ?? null;
-        const s = statsResp?.data ?? null;
+        // debug
+        console.log('[Dashboard] latestResp', latestResp);
+        console.log('[Dashboard] statsResp', statsResp);
+
+        const latest = latestResp?.data ?? latestResp ?? null;
+        const s = statsResp?.data ?? statsResp ?? null;
 
         if (!isValidLatest(latest) || !isValidStats(s)) {
-          if (attempt < MAX_ATTEMPTS) {
-            const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
-            setTimeout(() => fetchData(attempt + 1), wait);
-            return;
-          } else {
-            console.error('Invalid stats/latest response after retries', { latest, s });
-            // stop loading to avoid infinite spinner OR keep isLoading true if you want permanent spinner
-            setIsLoading(false);
-            return;
-          }
+          console.warn('[Dashboard] response shape unexpected — applying tolerant fallback', { latest, s });
+          // don't keep retrying just because shape differs; use what we have
         }
 
-        setLatestReadingData(latest);
-        setStats({
-          total: Number(s.total_kompos ?? s.total ?? 0),
-          sesuai: Number(s.sesuai_standar ?? s.compliant ?? 0),
-          tidakSesuai: Number(s.tidak_sesuai_standar ?? s.notCompliant ?? 0)
-        });
+        if (isMountedRef.current) {
+          setLatestReadingData(latest ?? null);
+
+          const total = s
+            ? Number(s.total_kompos ?? s.total ?? s.totalCount ?? s.count ?? 0)
+            : 0;
+          const sesuai = s
+            ? Number(s.sesuai_standar ?? s.compliant ?? s.match ?? 0)
+            : 0;
+          const tidakSesuai = s
+            ? Number(s.tidak_sesuai_standar ?? s.notCompliant ?? s.unmatch ?? 0)
+            : 0;
+
+          setStats({ total, sesuai, tidakSesuai });
+        }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('[Dashboard] fetchData error', error);
+        // keep a small retry for network errors
         if (attempt < MAX_ATTEMPTS) {
           const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
-          setTimeout(() => fetchData(attempt + 1), wait);
+          const t = setTimeout(() => {
+            if (!isMountedRef.current) return;
+            fetchData(attempt + 1);
+          }, wait);
+          timersRef.current.push(t);
           return;
         }
-        if (error.response?.status === 401) localStorage.removeItem('token');
+        if (error?.response?.status === 401) localStorage.removeItem('token');
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) setIsLoading(false);
       }
     };
 
     fetchData();
-    // initial load: replace records (not append)
     fetchRecords(1, { append: false });
+
     return () => {
       isMountedRef.current = false;
       timersRef.current.forEach(t => clearTimeout(t));
       timersRef.current = [];
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   // load more should append

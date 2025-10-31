@@ -1,42 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MoreVertical } from 'lucide-react';
 import RangeSlider from '../components/RangeSlider';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import api, { endpoints } from '../services/api';
 
 const DetailAnalysis = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [keterangan, setKeterangan] = useState(
-    'Kompos yang diuji merupakan hasil fermentasi limbah rumah tangga berupa sisa sayuran, kulit buah, dan daun kering yang dikumpulkan dari area pengomposan di Yogyakarta. Pengambilan dilakukan pada tumpukan yang telah mengalami proses fermentasi selama 3 minggu, dengan kondisi lingkungan yang terjaga pada suhu rata-rata 28°C. Sampel ini diambil untuk mengevaluasi kualitas pH, kadar air, dan kandungan NPK guna memastikan kesesuaiannya dengan standar pupuk organik.'
-  );
-
+  const { id } = useParams();
   const navigate = useNavigate();
 
-  const analysisData = {
-    status: 'SESUAI STANDAR',
-    date: '17:29, 8 Mei 2025',
-    measurements: {
-      pH: '7.0',
-      kadarAir: '25',
-      suhu: '28',
-      kadarN: '1',
-      kadarP: '1',
-      kadarK: '1',
-    },
+  const [isEditing, setIsEditing] = useState(false);
+  const [keterangan, setKeterangan] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [analysisData, setAnalysisData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchById = async () => {
+      if (!id) return setIsLoading(false);
+      setIsLoading(true);
+      try {
+        const url = endpoints?.compost?.ById(id) || `/compost/${id}`;
+        const resp = await api.get(url);
+        const body = resp?.data ?? resp ?? null;
+
+        // normalize expected shape (server returns object with fields)
+        const data = body?.data ?? body;
+
+        if (!mounted) return;
+        setAnalysisData(data);
+        setKeterangan(data?.keterangan ?? '');
+      } catch (err) {
+        console.error('DetailAnalysis: fetch error', err);
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
+    };
+
+    fetchById();
+    return () => { mounted = false; };
+  }, [id]);
+
+  const handleSave = async () => {
+    if (!id) return;
+    setIsSaving(true);
+    try {
+      const patchUrl = endpoints?.compost?.updateById ? endpoints.compost.updateById(id) : (endpoints?.compost?.patchById ? endpoints.compost.patchById(id) : `/compost/${id}`);
+      await api.patch(patchUrl, { keterangan });
+      // optimistic update
+      setAnalysisData(prev => prev ? { ...prev, keterangan } : prev);
+      setIsEditing(false);
+      alert('Keterangan berhasil diperbarui!');
+    } catch (err) {
+      console.error('DetailAnalysis: save error', err);
+      alert('Gagal menyimpan keterangan.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  const formatDate = (iso) => {
+    if (!iso) return '-';
+    try {
+      const d = new Date(iso);
+      return `${d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}, ${d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    } catch {
+      return iso;
+    }
+  };
+
+  // build slider data from fetched analysisData (fallback to placeholders)
+  const mm = analysisData ?? {};
   const sliderData = [
     {
       label: 'pH:',
-      currentValue: '7.0',
-      minValue: 6.0,
-      maxValue: 8.0,
+      currentValue: mm.ph ?? '-',
+      minValue: 0,
+      maxValue: 14,
       standardMin: '6.80',
       standardMax: '7.49',
       unit: '',
     },
     {
       label: 'Kadar air:',
-      currentValue: '25',
+      currentValue: mm.kadar_air ?? '-',
       minValue: 0,
       maxValue: 100,
       standardMin: null,
@@ -45,9 +92,9 @@ const DetailAnalysis = () => {
     },
     {
       label: 'Suhu:',
-      currentValue: '28',
-      minValue: 20,
-      maxValue: 40,
+      currentValue: mm.suhu ?? '-',
+      minValue: 0,
+      maxValue: 100,
       standardMin: null,
       standardMax: '30',
       unit: '°C',
@@ -57,45 +104,32 @@ const DetailAnalysis = () => {
   const sliderDataRight = [
     {
       label: 'Kadar N:',
-      currentValue: '1',
+      currentValue: mm.kadar_n ?? '-',
       minValue: 0,
-      maxValue: 3,
+      maxValue: 10,
       standardMin: '0.40',
       standardMax: null,
       unit: '%',
     },
     {
       label: 'Kadar P:',
-      currentValue: '1',
+      currentValue: mm.kadar_p ?? '-',
       minValue: 0,
-      maxValue: 3,
+      maxValue: 10,
       standardMin: '0.10',
       standardMax: null,
       unit: '%',
     },
     {
       label: 'Kadar K:',
-      currentValue: '1',
+      currentValue: mm.kadar_k ?? '-',
       minValue: 0,
-      maxValue: 3,
+      maxValue: 10,
       standardMin: '0.20',
       standardMax: null,
       unit: '%',
     },
   ];
-
-  // Fungsi format agar "pH" tidak diubah menjadi "PH"
-  const formatKey = (key) => {
-    const specialCases = ['pH', 'DO', 'EC']; // daftar khusus
-    if (specialCases.includes(key)) return key;
-    // ubah camelCase menjadi "Kadar Air", dll
-    return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    alert('Keterangan berhasil diperbarui!');
-  };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -116,28 +150,56 @@ const DetailAnalysis = () => {
               {/* Left Column */}
               <div>
                 <div className="mb-6">
-                  <p className="text-green-600 font-semibold text-lg mb-1">
-                    {analysisData.status}
-                  </p>
-                  <p className="text-xs text-gray-500">{analysisData.date}</p>
+                  {isLoading ? (
+                    <>
+                      <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-2" />
+                      <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
+                    </>
+                  ) : (
+                    <>
+                      <p className={`${mm.kualitas && mm.kualitas.toLowerCase().includes('baik') ? 'text-green-600' : 'text-red-600'} font-semibold text-lg mb-1`}>
+                        {mm.kualitas ?? '—'}
+                      </p>
+                      <p className="text-xs text-gray-500">{formatDate(mm.tanggal)}</p>
+                    </>
+                  )}
                 </div>
 
                 <div className="space-y-2 text-sm">
-                  {Object.entries(analysisData.measurements).map(([key, value]) => (
-                    <div key={key} className="flex">
-                      <span className="text-gray-600 w-24 text-left pr-2">
-                        {formatKey(key)}
-                      </span>
-                      <span className="font-semibold text-gray-800">
-                        : {value}
-                        {key === 'suhu'
-                          ? '°C'
-                          : key === 'kadarAir' || key.startsWith('kadar')
-                          ? '%'
-                          : ''}
-                      </span>
-                    </div>
-                  ))}
+                  {isLoading ? (
+                    <>
+                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
+                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
+                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">pH</span>
+                        <span className="font-semibold text-gray-800">: {mm.ph ?? '-'}</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Suhu</span>
+                        <span className="font-semibold text-gray-800">: {mm.suhu ?? '-'}°C</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Kadar N</span>
+                        <span className="font-semibold text-gray-800">: {mm.kadar_n ?? '-'}%</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Kadar P</span>
+                        <span className="font-semibold text-gray-800">: {mm.kadar_p ?? '-'}%</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Kadar K</span>
+                        <span className="font-semibold text-gray-800">: {mm.kadar_k ?? '-'}%</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Kadar Air</span>
+                        <span className="font-semibold text-gray-800">: {mm.kadar_air ?? '-'}%</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -165,25 +227,28 @@ const DetailAnalysis = () => {
           </div>
 
           <div className="p-6">
-            {isEditing ? (
+            {isLoading ? (
+              <div className="h-24 bg-gray-200 rounded animate-pulse mb-4" />
+            ) : isEditing ? (
               <textarea
                 value={keterangan}
                 onChange={(e) => setKeterangan(e.target.value)}
                 className="w-full h-40 p-3 border border-gray-300 rounded text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               />
             ) : (
-              <p className="text-sm text-gray-700 leading-relaxed mb-6">{keterangan}</p>
+              <p className="text-sm text-gray-700 leading-relaxed mb-6">{analysisData?.keterangan ?? '—'}</p>
             )}
 
             <button
               onClick={isEditing ? handleSave : () => setIsEditing(true)}
+              disabled={isSaving || isLoading}
               className={`px-6 py-2.5 border-2 ${
                 isEditing
                   ? 'border-green-700 text-green-700 hover:bg-green-100'
                   : 'border-blue-800 text-blue-600 hover:bg-blue-100'
               } font-semibold rounded transition-colors text-sm`}
             >
-              {isEditing ? 'SIMPAN' : 'EDIT KETERANGAN'}
+              {isSaving ? 'Menyimpan...' : (isEditing ? 'SIMPAN' : 'EDIT KETERANGAN')}
             </button>
           </div>
         </div>
