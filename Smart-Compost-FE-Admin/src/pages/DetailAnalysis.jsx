@@ -75,8 +75,8 @@ const DetailAnalysis = () => {
     {
       label: 'pH:',
       currentValue: mm.ph ?? '-',
-      minValue: 0,
-      maxValue: 14,
+      minValue: 6,
+      maxValue: 8,
       standardMin: '6.80',
       standardMax: '7.49',
       unit: '',
@@ -84,8 +84,8 @@ const DetailAnalysis = () => {
     {
       label: 'Kadar air:',
       currentValue: mm.kadar_air ?? '-',
-      minValue: 0,
-      maxValue: 100,
+      minValue: 40,
+      maxValue: 60,
       standardMin: null,
       standardMax: '50',
       unit: '%',
@@ -93,8 +93,8 @@ const DetailAnalysis = () => {
     {
       label: 'Suhu:',
       currentValue: mm.suhu ?? '-',
-      minValue: 0,
-      maxValue: 100,
+      minValue: 20,
+      maxValue: 40,
       standardMin: null,
       standardMax: '30',
       unit: '°C',
@@ -106,7 +106,7 @@ const DetailAnalysis = () => {
       label: 'Kadar N:',
       currentValue: mm.kadar_n ?? '-',
       minValue: 0,
-      maxValue: 10,
+      maxValue: 2,
       standardMin: '0.40',
       standardMax: null,
       unit: '%',
@@ -115,7 +115,7 @@ const DetailAnalysis = () => {
       label: 'Kadar P:',
       currentValue: mm.kadar_p ?? '-',
       minValue: 0,
-      maxValue: 10,
+      maxValue: 2,
       standardMin: '0.10',
       standardMax: null,
       unit: '%',
@@ -124,7 +124,7 @@ const DetailAnalysis = () => {
       label: 'Kadar K:',
       currentValue: mm.kadar_k ?? '-',
       minValue: 0,
-      maxValue: 10,
+      maxValue: 2,
       standardMin: '0.20',
       standardMax: null,
       unit: '%',
@@ -165,18 +165,26 @@ const DetailAnalysis = () => {
                   )}
                 </div>
 
+                {/* Skeleton Parameters*/}
                 <div className="space-y-2 text-sm">
-                  {isLoading ? (
-                    <>
-                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
-                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
-                      <div className="h-4 bg-gray-200 rounded w-full animate-pulse mb-2" />
-                    </>
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-3 text-sm">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="w-20 h-4 bg-gray-200 rounded animate-pulse"
+                      />
+                    ))}
+                  </div>
                   ) : (
                     <>
                       <div className="flex">
                         <span className="text-gray-600 w-24 text-left pr-2">pH</span>
                         <span className="font-semibold text-gray-800">: {mm.ph ?? '-'}</span>
+                      </div>
+                      <div className="flex">
+                        <span className="text-gray-600 w-24 text-left pr-2">Kadar Air</span>
+                        <span className="font-semibold text-gray-800">: {mm.kadar_air ?? '-'}%</span>
                       </div>
                       <div className="flex">
                         <span className="text-gray-600 w-24 text-left pr-2">Suhu</span>
@@ -193,10 +201,6 @@ const DetailAnalysis = () => {
                       <div className="flex">
                         <span className="text-gray-600 w-24 text-left pr-2">Kadar K</span>
                         <span className="font-semibold text-gray-800">: {mm.kadar_k ?? '-'}%</span>
-                      </div>
-                      <div className="flex">
-                        <span className="text-gray-600 w-24 text-left pr-2">Kadar Air</span>
-                        <span className="font-semibold text-gray-800">: {mm.kadar_air ?? '-'}%</span>
                       </div>
                     </>
                   )}
@@ -220,47 +224,64 @@ const DetailAnalysis = () => {
           </div>
         </div>
 
-        {/* Keterangan Section */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="text-sm font-semibold text-gray-800">KETERANGAN</h2>
-          </div>
+            {/* Keterangan Section */}
+            <div className="bg-white rounded-lg shadow">
+              <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-gray-800">KETERANGAN</h2>
+              </div>
 
-          <div className="p-6">
-            {isLoading ? (
+            <div className="p-6">
+              {isLoading ? (
+                <>
+              {/* Skeleton untuk isi keterangan */}
               <div className="h-24 bg-gray-200 rounded animate-pulse mb-4" />
-            ) : isEditing ? (
-              <textarea
-                value={keterangan}
-                onChange={(e) => setKeterangan(e.target.value)}
-                className="w-full h-40 p-3 border border-gray-300 rounded text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              />
-            ) : (
-              <p className="text-sm text-gray-700 leading-relaxed mb-6">{analysisData?.keterangan ?? '—'}</p>
+              {/* Skeleton untuk tombol */}
+              <div className="w-40 h-10 bg-gray-200 rounded animate-pulse" />
+              </>
+                ) : isEditing ? (
+                  <>
+                  <textarea
+                    value={keterangan}
+                    onChange={(e) => setKeterangan(e.target.value)}
+                    className="w-full h-40 p-3 border border-gray-300 rounded text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                  />
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-6 py-2.5 border-2 border-green-700 text-green-700 hover:bg-green-100 font-semibold rounded transition-colors text-sm"
+                    >
+                    {isSaving ? 'Menyimpan...' : 'SIMPAN'}
+                  </button>
+                </>
+                ) : (
+                <>
+                <p className="text-sm text-gray-700 leading-relaxed mb-6">
+                  {analysisData?.keterangan ?? '—'}
+                </p>
+              <button
+                onClick={() => setIsEditing(true)}
+                disabled={isLoading}
+                className="px-6 py-2.5 border-2 border-blue-800 text-blue-600 hover:bg-blue-100 font-semibold rounded transition-colors text-sm"
+                >
+                EDIT KETERANGAN
+              </button>
+            </>
             )}
-
-            <button
-              onClick={isEditing ? handleSave : () => setIsEditing(true)}
-              disabled={isSaving || isLoading}
-              className={`px-6 py-2.5 border-2 ${
-                isEditing
-                  ? 'border-green-700 text-green-700 hover:bg-green-100'
-                  : 'border-blue-800 text-blue-600 hover:bg-blue-100'
-              } font-semibold rounded transition-colors text-sm`}
-            >
-              {isSaving ? 'Menyimpan...' : (isEditing ? 'SIMPAN' : 'EDIT KETERANGAN')}
-            </button>
           </div>
         </div>
 
         {/* Button Back */}
         <div className="mt-5">
+          {isLoading ? (
+            <div className="w-32 h-10 bg-gray-200 rounded animate-pulse" />
+          ) :  (
           <button
             onClick={() => navigate('/')}
             className="px-6 py-2.5 border-2 border-red-600 text-red-700 font-semibold rounded hover:bg-red-100 transition-colors text-sm"
           >
             KEMBALI
           </button>
+          )}
         </div>
       </div>
     </div>
