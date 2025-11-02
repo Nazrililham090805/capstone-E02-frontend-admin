@@ -84,9 +84,8 @@ const DetailAnalysis = () => {
 
   return (
     <div
-      className="full-screen bg-cover"
-      style={{ backgroundImage: "url('/public/soil.jpg')" }}
-    >
+      className="full-screen bg-gray-50"
+      >
       <div className="min-h-screen p-6">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl font-bold text-gray-800 mb-6">
@@ -131,12 +130,12 @@ const DetailAnalysis = () => {
                       </div>
                     ) : (
                       <>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">pH</span><span className="font-semibold text-gray-800">: {mm.ph ?? '-'}</span></div>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">Kadar Air</span><span className="font-semibold text-gray-800">: {mm.kadar_air ?? '-'}%</span></div>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">Suhu</span><span className="font-semibold text-gray-800">: {mm.suhu ?? '-'}°C</span></div>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">Kadar N</span><span className="font-semibold text-gray-800">: {mm.kadar_n ?? '-'}%</span></div>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">Kadar P</span><span className="font-semibold text-gray-800">: {mm.kadar_p ?? '-'}%</span></div>
-                        <div className="flex"><span className="text-gray-600 w-24 text-left pr-2">Kadar K</span><span className="font-semibold text-gray-800">: {mm.kadar_k ?? '-'}%</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">pH</span><span className="font-semibold text-gray-800">: {mm.ph ?? '-'}</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">Kadar Air</span><span className="font-semibold text-gray-800">: {mm.kadar_air ?? '-'}%</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">Suhu</span><span className="font-semibold text-gray-800">: {mm.suhu ?? '-'}°C</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">Kadar N</span><span className="font-semibold text-gray-800">: {mm.kadar_n ?? '-'}%</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">Kadar P</span><span className="font-semibold text-gray-800">: {mm.kadar_p ?? '-'}%</span></div>
+                        <div className="flex"><span className="text-black w-24 text-left pr-2">Kadar K</span><span className="font-semibold text-gray-800">: {mm.kadar_k ?? '-'}%</span></div>
                       </>
                     )}
                   </div>
@@ -144,17 +143,17 @@ const DetailAnalysis = () => {
 
                 {/* Middle Column */}
                 <div>
-                  {sliderData.map((slider, index) => (
-                    <RangeSlider key={index} {...slider} />
-                  ))}
-                </div>
-
+                {sliderData.map((slider, index) => (
+                  <RangeSlider key={index} {...slider} isLoading={isLoading} />
+                ))}
+              </div>
                 {/* Right Column */}
-                <div>
-                  {sliderDataRight.map((slider, index) => (
-                    <RangeSlider key={index} {...slider} />
-                  ))}
-                </div>
+              <div>
+                {sliderDataRight.map((slider, index) => (
+                  <RangeSlider key={index} {...slider} isLoading={isLoading} />
+                ))}
+              </div>
+
               </div>
             </div>
           </div>

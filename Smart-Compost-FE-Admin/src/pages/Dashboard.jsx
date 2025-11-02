@@ -181,8 +181,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="full-screen bg-cover"
-      style={{ backgroundImage: "url('/public/soil.jpg')" }}
+    <div className="full-screen bg-gray-50"
     >
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard Smart Compost Analyzer</h1>

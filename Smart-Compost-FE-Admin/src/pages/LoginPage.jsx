@@ -28,80 +28,80 @@ const LoginPage = ({ onLogin }) => {
   };
 
   return (
-    <div
-      className="relative flex flex-col items-center justify-center h-screen w-screen bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/public/soil.jpg')" }}
-    >
-      {/* Overlay untuk kontras */}
-      <div className="absolute inset-0 bg-black/20 backdrop-sm"></div>
-
-      {/* Header*/}
-      <div className="relative z-10 text-center text-black mb-8 px-4 -mt-60">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold whitespace-nowrap">
-          Welcome to Smart Compost Analyzer Dashboard
-        </h1>
-        <p className="mt-3 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-          Track temperature, pH, moisture, and nutrient levels — ensuring your compost meets national standards (SNI).
-        </p>
+    <div className="grid grid-cols-1 lg:grid-cols-4 h-screen w-screen">
+      {/* Kolom 1 - Gambar (3/4 layar) */}
+      <div
+        className="hidden lg:block lg:col-span-3 bg-cover bg-center bg-no-repeat relative"
+        style={{ backgroundImage: "url('../src/assets/soil.jpg')" }}
+      >
       </div>
 
-      {/* Form Login */}
-      <div className="relative z-10 w-full max-w-md p-8 bg-cover rounded-xl">
-        <div className="space-y-5 mt-20">
-
-          {/* Title */}
-          <h1 className="text-xl sm:text-2xl md:text-3xl text-center lg:text-4xl font-bold">
-            Sign In
+      {/* Kolom 2 - Form Login (1/4 layar) */}
+      <div className="flex flex-col items-center justify-center p-8  rounded-lg shadow-lg ">
+        {/* Header */}
+        <div className="text-center text-black mb-8 px-4 max-w-lg">
+          <h1 className="font-bold text-4xl sm:text-3xl mb-4">
+            Welcome to Smart Compost Analyzer
           </h1>
+          <p className="italic text-sm sm:text-base text-black leading-relaxed">
+            "Track temperature, pH, moisture, and nutrient levels — ensuring your compost meets SNI standards.""
+          </p>
+        </div>
 
-          {/* Username */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-black mb-2">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Enter your username or email"
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
-            />
-          </div>
+        {/* Form Login */}
+        <div className="w-full max-w-sm">
+          <div className="space-y-6">
+            
 
-          {/* Password */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-black mb-2">
-              Password
-            </label>
-            <div className="relative">
+            {/* Username */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
               <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter your password"
-                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+                placeholder="Enter your username or email"
+                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
             </div>
-          </div>
 
-          {/* Tombol Sign In */}
-          <button
-            onClick={handleSubmit}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Sign in
-          </button>
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Enter your password"
+                  className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Tombol Sign In */}
+            <button
+              onClick={handleSubmit}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Sign in
+            </button>
+          </div>
         </div>
       </div>
     </div>
