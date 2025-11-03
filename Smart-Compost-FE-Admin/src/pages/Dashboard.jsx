@@ -19,7 +19,7 @@ const Dashboard = () => {
     kadar_k: ''
   });
 
-  const [stats, setStats] = useState({
+  const [stats, setStats]  = useState({
     total: 0,
     sesuai: 0,
     tidakSesuai: 0
@@ -187,6 +187,8 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard Smart Compost Analyzer</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+          
+          {/* Column 1 - Pembacaan Terbaru */}
           <div>
             <LatestReading
               title="Pembacaan Terbaru"
@@ -196,6 +198,7 @@ const Dashboard = () => {
             />
           </div>
 
+          {/* Column 3 - Statistics Cards */}
           <div className="space-y-4">
             <DataCard count={stats.total} label="Jumlah Analisis" type="total" isLoading={isLoading} />
             <DataCard count={stats.sesuai} label="Sesuai Standar" type="compliant" isLoading={isLoading} />

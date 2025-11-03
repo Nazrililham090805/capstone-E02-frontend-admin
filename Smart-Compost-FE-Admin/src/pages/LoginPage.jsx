@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import api, { endpoints } from '../services/api';
+import compostImage from "../assets/compost.jpeg";
+import logoImage from "../assets/react.svg";
 
 const LoginPage = ({ onLogin }) => {
   const [username, setUsername] = useState('');
@@ -31,13 +33,23 @@ const LoginPage = ({ onLogin }) => {
     <div className="grid grid-cols-1 lg:grid-cols-4 h-screen w-screen">
       {/* Kolom 1 - Gambar (3/4 layar) */}
       <div
-        className="hidden lg:block lg:col-span-3 bg-cover bg-center bg-no-repeat relative"
-        style={{ backgroundImage: "url('../src/assets/soil.jpg')" }}
+        className="hidden  lg:block lg:col-span-3 bg-cover bg-center bg-no-repeat relative"
+        src={compostImage}
+        alt="Compost Background"
+         style={{ backgroundImage: `url(${compostImage})` }}
       >
       </div>
 
       {/* Kolom 2 - Form Login (1/4 layar) */}
       <div className="flex flex-col items-center justify-center p-8  rounded-lg shadow-lg ">
+
+        {/* Logo */}
+        <img
+          src={logoImage}
+          alt="Smart Compost Analyzer Logo"
+          className="w-60 h-30 mb-8 object-contain"
+        />
+
         {/* Header */}
         <div className="text-center text-black mb-8 px-4 max-w-lg">
           <h1 className="font-bold text-4xl sm:text-3xl mb-4">
