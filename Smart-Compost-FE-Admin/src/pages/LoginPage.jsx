@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import api, { endpoints } from '../services/api';
-import compostImage from "../assets/compost.jpeg";
+import compostImage from "../assets/kompos.jpg";
 import logoImage from "../assets/react.svg";
 
 const LoginPage = ({ onLogin }) => {
@@ -52,11 +52,11 @@ const LoginPage = ({ onLogin }) => {
 
         {/* Header */}
         <div className="text-center text-black mb-8 px-4 max-w-lg">
-          <h1 className="font-bold text-4xl sm:text-3xl mb-4">
-            Welcome to Smart Compost Analyzer
+          <h1 className="font-bold text-3xl sm:text-2xl mb-4">
+            Monitor Your Compost Easily
           </h1>
-          <p className="italic text-sm sm:text-base text-black leading-relaxed">
-            "Track temperature, pH, moisture, and nutrient levels — ensuring your compost meets SNI standards.""
+          <p className="italic text-2x1 sm:text-1x1 text-black leading-relaxed">
+            "Track temperature, pH, humidity, and NPK (Nitrogen, Phosphorus, and Potassium) content — make sure your compost meets SNI standards."
           </p>
         </div>
 
@@ -76,7 +76,7 @@ const LoginPage = ({ onLogin }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter your username or email"
+                placeholder="Enter your username"
                 className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
               />
             </div>

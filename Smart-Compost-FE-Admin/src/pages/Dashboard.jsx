@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import api, { endpoints } from '../services/api';
+import api, { endpoints, fetchCompostRecords } from '../services/api';
 import { Navigate } from 'react-router-dom';
 import LatestReading from '../components/LatestReading';
 import DataCard from '../components/DataCard';
@@ -19,7 +19,7 @@ const Dashboard = () => {
     kadar_k: ''
   });
 
-  const [stats, setStats]  = useState({
+  const [stats, setStats] = useState({
     total: 0,
     sesuai: 0,
     tidakSesuai: 0
@@ -34,73 +34,89 @@ const Dashboard = () => {
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [recordsHasMore, setRecordsHasMore] = useState(false);
 
-  // guard ref to avoid concurrent requests and keep fetchRecords stable
+  // Filter state
+  const [filters, setFilters] = useState({
+    bulan: '',
+    status: '',
+    keterangan: '',
+    sort: ''
+  });
+
+  // guard ref to avoid concurrent requests
   const recordsLoadingRef = useRef(false);
-  const fetchRecordsAttempts = useRef({}); // keyed by page
   const timersRef = useRef([]);
   const isMountedRef = useRef(true);
 
-  // helper validator (sesuaikan shape yang diharapkan)
+  // helper validator
   const isValidStats = (s) => s && (s.total_kompos !== undefined || s.total !== undefined);
   const isValidLatest = (l) => l && Object.keys(l).length > 0;
-  const isValidRecordsBody = (body) => Array.isArray(body?.data) || Array.isArray(body);
 
-  // changed: parse response with { data, meta } shape
-  async function fetchRecords(page = 1, { append = false, attempt = 1 } = {}) {
-     if (recordsLoadingRef.current) return;
-     recordsLoadingRef.current = true;
-     setRecordsLoading(true);
+  // Fungsi untuk fetch records dengan filter
+  async function fetchRecords(page = 1, currentFilters = filters, attempt = 1) {
+  if (recordsLoadingRef.current) return;
+  recordsLoadingRef.current = true;
+  setRecordsLoading(true);
 
-     try {
-       const resp = await api.get(endpoints.compost.getRecordsPage(page, PAGE_LIMIT));
-       const body = resp?.data ?? {};
-       if (!isValidRecordsBody(body)) {
-         // retry with backoff
-         if (attempt < MAX_ATTEMPTS) {
-           const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
-          fetchRecordsAttempts.current[page] = attempt + 1;
-          const t = setTimeout(() => {
-            if (!isMountedRef.current) return;
-            fetchRecords(page, { append, attempt: attempt + 1 });
-          }, wait);
-          timersRef.current.push(t);
-           return;
-         } else {
-           console.error('Invalid records response after retries:', body);
-           // fallback: set empty array to avoid infinite loading (optional)
-          if (isMountedRef.current) setRecords([]);
-         }
-       } else {
-         const pageData = Array.isArray(body?.data) ? body.data : (Array.isArray(body) ? body : []);
-         const meta = body.meta ?? {};
+try {
+  const query = {
+    page,
+    limit: PAGE_LIMIT,
+  };
 
-         if (append) setRecords(prev => [...(prev || []), ...pageData]);
-         else setRecords(pageData);
+  // Add filters if they exist
+  if (currentFilters.bulan) query.bulan = currentFilters.bulan;
+  if (currentFilters.status) query.status = currentFilters.status;
+  if (currentFilters.keterangan) query.keterangan = currentFilters.keterangan;
+  if (currentFilters.sort) query.sort = currentFilters.sort;
 
-         const totalPages = Number(meta.totalPages ?? Math.ceil((meta.total ?? pageData.length) / PAGE_LIMIT));
-         const currentPage = Number(meta.page ?? page);
-         const hasNext = meta.hasNext ?? (currentPage < totalPages);
+  const response = await fetchCompostRecords(query);
+  const body = response; // handle kedua kemungkinan
 
-         setRecordsTotalPages(totalPages);
-         setRecordsPage(currentPage);
-         setRecordsHasMore(Boolean(hasNext));
-       }
-     } catch (err) {
-       console.error('Error fetching records:', err);
-       if (attempt < MAX_ATTEMPTS) {
-         const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
-         const t = setTimeout(() => {
-         if (!isMountedRef.current) return;
-          fetchRecords(page, { append, attempt: attempt + 1 });
-        }, wait);
-        timersRef.current.push(t);
-         return;
-        }
-     } finally {
-       recordsLoadingRef.current = false;
-       setRecordsLoading(false);
-     }
-  } // stable
+  // ✅ Tambahkan logika adaptif di sini
+  let pageData = [];
+  let meta = {};
+
+  if (Array.isArray(body)) {
+    pageData = body;
+  } else if (body?.data && Array.isArray(body.data)) {
+    pageData = body.data;
+    meta = body.meta || {};
+  } else {
+    // kalau gagal semua
+    console.error("Invalid records response:", body);
+    if (isMountedRef.current) setRecords([]);
+    return;
+  }
+
+  // 🔹 Format data agar cocok dengan tabel
+  const formattedData = pageData.map((item) => ({
+    id: item.id,
+    tanggal: item.tanggal,
+    kadar_n: parseFloat(item.kadar_n),
+    kadar_p: parseFloat(item.kadar_p),
+    kadar_k: parseFloat(item.kadar_k),
+    kadar_air: parseFloat(item.kadar_air ?? 0),
+    ph: parseFloat(item.ph ?? 0),
+    suhu: parseFloat(item.suhu ?? 0),
+    keterangan: item.keterangan || "-",
+    status: item.kualitas || "-",
+  }));
+
+  if (isMountedRef.current) {
+    setRecords(formattedData);
+    setRecordsTotalPages(Number(meta.totalPages ?? 1));
+    setRecordsPage(Number(meta.page ?? 1));
+    setRecordsHasMore(Boolean(meta.hasNext ?? false));
+  }
+} catch (err) {
+  console.error("Error fetching records:", err);
+  if (isMountedRef.current) {
+    setRecords([]);
+  }
+} finally {
+  recordsLoadingRef.current = false;
+  setRecordsLoading(false);
+}}
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -112,16 +128,11 @@ const Dashboard = () => {
           api.get(endpoints.compost.getStats)
         ]);
 
-        // debug
-        console.log('[Dashboard] latestResp', latestResp);
-        console.log('[Dashboard] statsResp', statsResp);
-
         const latest = latestResp?.data ?? latestResp ?? null;
         const s = statsResp?.data ?? statsResp ?? null;
 
         if (!isValidLatest(latest) || !isValidStats(s)) {
           console.warn('[Dashboard] response shape unexpected — applying tolerant fallback', { latest, s });
-          // don't keep retrying just because shape differs; use what we have
         }
 
         if (isMountedRef.current) {
@@ -141,7 +152,6 @@ const Dashboard = () => {
         }
       } catch (error) {
         console.error('[Dashboard] fetchData error', error);
-        // keep a small retry for network errors
         if (attempt < MAX_ATTEMPTS) {
           const wait = RETRY_BASE_MS * 2 ** (attempt - 1);
           const t = setTimeout(() => {
@@ -158,38 +168,38 @@ const Dashboard = () => {
     };
 
     fetchData();
-    fetchRecords(1, { append: false });
+    fetchRecords(1, filters);
 
     return () => {
       isMountedRef.current = false;
       timersRef.current.forEach(t => clearTimeout(t));
       timersRef.current = [];
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
-  // load more should append
-  const handleLoadMoreRecords = () => {
-    if (recordsLoading || !recordsHasMore) return;
-    fetchRecords(recordsPage + 1, { append: true });
+
+  // Handler untuk page change
+  const handleChangePage = (page) => {
+  if (page === recordsPage || recordsLoading) return;
+  setRecordsPage(page); // <── penting, update state halaman
+  fetchRecords(page, filters);
   };
 
-  // page click: replace with selected page (not append)
-  const handleChangePage = (page) => {
-    if (page === recordsPage) return;
-    fetchRecords(page, { append: false });
+  // Handler untuk filter change
+  const handleFilterChange = (newFilters) => {
+    setFilters(newFilters);
+    // Reset ke halaman 1 saat filter berubah
+    fetchRecords(1, newFilters);
   };
 
   return (
-    <div className="full-screen bg-gray-50"
-    >
+    <div className="full-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard Smart Compost Analyzer</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
           
           {/* Column 1 - Pembacaan Terbaru */}
-          <div>
+          <div>  
             <LatestReading
               title="Pembacaan Terbaru"
               data={latestReadingData}
@@ -211,8 +221,9 @@ const Dashboard = () => {
           page={recordsPage}
           limit={PAGE_LIMIT}
           totalPages={recordsTotalPages}
-          onLoadMore={handleLoadMoreRecords}
           onChangePage={handleChangePage}
+          onFilterChange={handleFilterChange}
+          filters={filters}
           isLoading={recordsLoading}
           hasMore={recordsHasMore}
         />

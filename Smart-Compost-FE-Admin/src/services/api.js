@@ -30,9 +30,33 @@ export const endpoints = {
   compost: {
     base: '/compost',
     getStats: '/compost/stats',
-    getRecordsPage: (page = 1, limit = 10) => `/compost/records/page/${page}/limit/${limit}`,
+    getRecords: '/compost/records',
+    getRecordsDefault: '/compost/records/default',
     getLatest: '/compost/latest',
     ById: (id) => `/compost/${id}`
+  }
+};
+
+// Fungsi untuk fetch compost records dengan filter
+export const fetchCompostRecords = async (query = {}) => {
+  try {
+    const params = new URLSearchParams();
+    
+    // Tambahkan query hanya jika ada nilainya
+    if (query.page) params.append('page', query.page);
+    if (query.limit) params.append('limit', query.limit);
+    if (query.bulan) params.append('bulan', query.bulan); // contoh: "2025-11"
+    if (query.status) params.append('status', query.status);
+    if (query.keterangan) params.append('keterangan', query.keterangan);
+    if (query.sort) params.append('sort', query.sort); // contoh: "kadar_n:desc,kadar_p:asc"
+    
+    const queryString = params.toString().replace(/\+/g, '%20');
+
+    const response = await api.get(`/compost/records?${queryString}`);
+
+    return response.data; // { data, meta }
+  } catch (error) {
+    throw error;
   }
 };
 
