@@ -31,33 +31,40 @@ const DetailAnalysis = () => {
         };
 
         // Logika pengecekan
-        if (data.suhu < standar.suhu.min)
-          rekomendasi.push('Tingkatkan suhu dengan menambah bahan kaya nitrogen (seperti sisa sayur atau rumput segar).');
-        else if (data.suhu > standar.suhu.max)
-          rekomendasi.push('Turunkan suhu dengan membalik tumpukan kompos dan Pastikan aerasi cukup agar tidak anaerob .'); //fix
-
         if (data.ph < standar.ph.min)
           rekomendasi.push('pH terlalu asam — Tambahkan kapur pertanian 1-5 kg/ton atau abu kayu.'); //fix
         else if (data.ph > standar.ph.max)
           rekomendasi.push('pH terlalu basa — Tambahkan belerang atau bahan organik asam (serbuk gergaji pinus, ampas kopi).'); //fix
-
+        
         if (data.kadar_air < standar.kadar_air.min)
           rekomendasi.push('Kelembapan rendah — Tambahkan air atau bahan basah.');
         else if (data.kadar_air > standar.kadar_air.max)
           rekomendasi.push('Kelembapan terlalu tinggi — Lakukan pembalikan/aerasi untuk mengurangi kadar air, Tambahkan bahan kering seperti sekam, serbuk gaji, daun kering dan Keringkan di tempat teduh berventilasi baik, hindari sinar matahari langsung berlebihan .'); //fix
 
-        if (data.nitrogen < standar.nitrogen.min)
+        
+        if (data.suhu < standar.suhu.min)
+          rekomendasi.push('Tingkatkan suhu dengan menambah bahan kaya nitrogen (seperti sisa sayur atau rumput segar).');
+        else if (data.suhu > standar.suhu.max)
+          rekomendasi.push('Turunkan suhu dengan membalik tumpukan kompos dan Pastikan aerasi cukup agar tidak anaerob .'); //fix
+
+        
+
+        if (data.kadar_n < standar.nitrogen.min)        
           rekomendasi.push('Kandungan Nitrogen rendah — Tingkatkan Nitrogen dengan kotoran ayam/kambing, tepung darah, dan leguminosa.');
-        if (data.fosfor < standar.fosfor.min)
+        if (data.kadar_p < standar.fosfor.min)
           rekomendasi.push('Kandungan Fosfor rendah — Tingkatkan Fosfor dengan fosfat alam, tepung tulang, dan guano.');
-        if (data.kalium < standar.kalium.min)
+        if (data.kadar_k < standar.kalium.min)
           rekomendasi.push('Kandungan Kalium rendah — Tingkatkan Kalium dengan abu kayu, abu sabut kelapa, dan kotoran kelinci.');
 
-        return rekomendasi.length > 0
-          ? rekomendasi.join(' ')
-          : 'Semua parameter kompos sudah sesuai standar SNI. Tidak perlu penambahan bahan.';
-      };
-
+        return rekomendasi.length > 0 ? (
+  <ol className="list-decimal pl-5 space-y-1">
+    {rekomendasi.map((item, index) => (
+      <li key={index}>{item}</li>
+    ))}
+  </ol>
+) : (
+  <p>Semua parameter kompos sudah sesuai standar SNI. Tidak perlu penambahan bahan.</p>
+)};
 
   useEffect(() => {
     let mounted = true;
@@ -126,7 +133,7 @@ const DetailAnalysis = () => {
     { label: 'Kadar P:', currentValue: mm.kadar_p ?? '-', minValue: 0, maxValue: 2, standardMin: '0.10', standardMax: null, unit: '%' },
     { label: 'Kadar K:', currentValue: mm.kadar_k ?? '-', minValue: 0, maxValue: 2, standardMin: '0.20', standardMax: null, unit: '%' },
   ];
-
+  
   return (
     <div
       className="full-screen bg-gray-50"
@@ -204,42 +211,43 @@ const DetailAnalysis = () => {
           </div>
 
           {/* Keterangan Section */}
-          <div className ="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
-            <div className="bg-white rounded-lg shadow">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-6">
+            <div className="bg-white rounded-lg shadow flex flex-col">
               <div className="p-6 border-b border-gray-200 flex justify-between items-center">
                 <h2 className="text-sm font-semibold text-gray-800">KETERANGAN</h2>
               </div>
 
-              <div className="p-6">
+              {/* Konten Utama */}
+              <div className="p-6 flex flex-col flex-grow">
                 {isLoading ? (
                   <>
                     <div className="h-24 bg-gray-200 rounded animate-pulse mb-4" />
-                    <div className="w-40 h-10 bg-gray-200 rounded animate-pulse" />
+                    <div className="w-40 h-10 bg-gray-200 rounded animate-pulse mb-4" />
                   </>
                 ) : isEditing ? (
                   <>
                     <textarea
                       value={keterangan}
                       onChange={(e) => setKeterangan(e.target.value)}
-                      className="w-full h-40 p-3 border border-gray-300 rounded text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                      className="w-full flex-grow min-h-40 p-3 border border-gray-300 rounded text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none"
                     />
                     <button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="px-6 py-2.5 border-2 border-green-700 text-green-700 hover:bg-green-100 font-semibold rounded transition-colors text-sm"
+                      className="mt-auto px-6 py-2.5 w-full sm:w-auto border-2 border-green-700 text-green-700 hover:bg-green-100 font-semibold rounded transition-colors text-sm self-end"
                     >
                       {isSaving ? 'Menyimpan...' : 'SIMPAN'}
                     </button>
                   </>
                 ) : (
                   <>
-                    <p className="text-sm text-gray-700 leading-relaxed mb-6">
+                    <p className="text-sm text-gray-700 leading-relaxed mb-6 flex-grow">
                       {analysisData?.keterangan ?? '—'}
                     </p>
                     <button
                       onClick={() => setIsEditing(true)}
                       disabled={isLoading}
-                      className="px-6 py-2.5 border-2 border-blue-800 text-blue-600 hover:bg-blue-100 font-semibold rounded transition-colors text-sm"
+                      className="mt-auto px-6 py-2.5 w-full sm:w-auto border-2 border-blue-800 text-blue-600 hover:bg-blue-100 font-semibold rounded transition-colors text-sm self-start"
                     >
                       EDIT KETERANGAN
                     </button>
@@ -259,15 +267,15 @@ const DetailAnalysis = () => {
                   <div className="h-32 bg-gray-200 rounded animate-pulse mb-4" />
                 ) : (
                   <div>
-                    <p className="text-sm text-gray-700 leading-relaxed mb-6">
+                    <div className="text-sm text-gray-700 leading-relaxed mb-6">
                       {generateRekomendasi(analysisData)}
-                    </p>
+                    </div>
                   </div>
                 )}
               </div>
-
             </div>
           </div>
+
 
           {/* Button Back */}
           <div className="mt-5">
