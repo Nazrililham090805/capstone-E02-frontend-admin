@@ -41,13 +41,10 @@ const DetailAnalysis = () => {
         else if (data.kadar_air > standar.kadar_air.max)
           rekomendasi.push('Kelembapan terlalu tinggi — Lakukan pembalikan/aerasi untuk mengurangi kadar air, Tambahkan bahan kering seperti sekam, serbuk gaji, daun kering dan Keringkan di tempat teduh berventilasi baik, hindari sinar matahari langsung berlebihan .'); //fix
 
-        
         if (data.suhu < standar.suhu.min)
           rekomendasi.push('Tingkatkan suhu dengan menambah bahan kaya nitrogen (seperti sisa sayur atau rumput segar).');
         else if (data.suhu > standar.suhu.max)
           rekomendasi.push('Turunkan suhu dengan membalik tumpukan kompos dan Pastikan aerasi cukup agar tidak anaerob .'); //fix
-
-        
 
         if (data.kadar_n < standar.nitrogen.min)        
           rekomendasi.push('Kandungan Nitrogen rendah — Tingkatkan Nitrogen dengan kotoran ayam/kambing, tepung darah, dan leguminosa.');
@@ -122,16 +119,71 @@ const DetailAnalysis = () => {
   };
 
   const mm = analysisData ?? {};
+  const clampValue = (value, min, max) => {
+  if (value === null || value === undefined || value === '-') return '-';
+  const num = Number(value);
+  if (isNaN(num)) return '-';
+  return Math.min(Math.max(num, min), max);
+  };
+
   const sliderData = [
-    { label: 'pH:', currentValue: mm.ph ?? '-', minValue: 6, maxValue: 8, standardMin: '6.80', standardMax: '7.49', unit: '' },
-    { label: 'Kadar air:', currentValue: mm.kadar_air ?? '-', minValue: 40, maxValue: 60, standardMin: null, standardMax: '50', unit: '%' },
-    { label: 'Suhu:', currentValue: mm.suhu ?? '-', minValue: 20, maxValue: 40, standardMin: null, standardMax: '30', unit: '°C' },
+    {
+      label: 'pH:',
+      currentValue: clampValue(mm.ph, 6, 8),
+      minValue: 6,
+      maxValue: 8,
+      standardMin: '6.80',
+      standardMax: '7.49',
+      unit: ''
+    },
+    {
+      label: 'Kadar air:',
+      currentValue: clampValue(mm.kadar_air, 40, 60),
+      minValue: 40,
+      maxValue: 60,
+      standardMin: null,
+      standardMax: '50',
+      unit: '%'
+    },
+    {
+      label: 'Suhu:',
+      currentValue: clampValue(mm.suhu, 20, 40),
+      minValue: 20,
+      maxValue: 40,
+      standardMin: null,
+      standardMax: '30',
+      unit: '°C'
+    },
   ];
 
   const sliderDataRight = [
-    { label: 'Kadar N:', currentValue: mm.kadar_n ?? '-', minValue: 0, maxValue: 2, standardMin: '0.40', standardMax: null, unit: '%' },
-    { label: 'Kadar P:', currentValue: mm.kadar_p ?? '-', minValue: 0, maxValue: 2, standardMin: '0.10', standardMax: null, unit: '%' },
-    { label: 'Kadar K:', currentValue: mm.kadar_k ?? '-', minValue: 0, maxValue: 2, standardMin: '0.20', standardMax: null, unit: '%' },
+    {
+      label: 'Kadar N:',
+      currentValue: clampValue(mm.kadar_n, 0, 2),
+      minValue: 0,
+      maxValue: 2,
+      standardMin: '0.40',
+      standardMax: null,
+      unit: '%'
+    },
+    {
+      label: 'Kadar P:',
+      currentValue: clampValue(mm.kadar_p, 0, 2),
+      minValue: 0,
+      maxValue: 2,
+      standardMin: '0.10',
+      standardMax: null,
+      unit: '%'
+    },
+    {
+      label: 'Kadar K:',
+      currentValue: clampValue(mm.kadar_k, 0, 2),
+      minValue: 0,
+      maxValue: 2,
+      standardMin: '0.20',
+      standardMax: null,
+      unit: '%'
+    },
   ];
   
   return (
