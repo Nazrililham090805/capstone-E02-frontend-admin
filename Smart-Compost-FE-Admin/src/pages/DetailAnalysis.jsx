@@ -217,7 +217,9 @@ const DetailAnalysis = () => {
                       </>
                     ) : (
                       <>
-                        <p className={`${mm.kualitas?.toLowerCase().includes('baik') ? 'text-green-600' : 'text-red-600'} font-semibold text-lg mb-1`}>
+                        <p
+                          className={`${mm.kualitas === 'Sesuai Standar' ? 'text-green-600' : 'text-red-600'} font-semibold text-lg mb-1`}
+                        >
                           {mm.kualitas ?? '—'}
                         </p>
                         <p className="text-xs text-gray-500">{formatDate(mm.tanggal)}</p>
