@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://capstone-e02-backend.vercel.app';
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const api = axios.create({
   baseURL: BASE_URL,
